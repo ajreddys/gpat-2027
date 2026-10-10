@@ -1,0 +1,42 @@
+# Publishes the brochure to GitHub Pages (gpat27.pharmakaksha.com)
+# every time you push to the main branch.
+name: Deploy gpat27.pharmakaksha.com
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+      # Copy only the files the site needs (not README or the workflow).
+      - name: Prepare site folder
+        run: |
+          mkdir _site
+          cp index.html logo.jpg CNAME .nojekyll _site/
+          if [ -f og-image.jpg ]; then cp og-image.jpg _site/; fi
+      - uses: actions/upload-pages-artifact@v5
+        with:
+          path: ./_site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@v5
